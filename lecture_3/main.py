@@ -6,15 +6,25 @@ def display_menu():
     print("3. Generate a full report")
     print("4. Find the top student")
     print("5. Exit program")
+    
+def enter_student_name():
+    name = input("Enter student name: ").strip()
+    
+    if not name:
+        raise("Error: Student name cannot be empty!")    
+    return name
 
 def add_new_student(students):
     """Add a new student to the list"""
     name = input("Enter student name: ").strip()
+    if not name:
+        print("Error: Student name cannot be empty!")
+        return
     
-    for student in students:
-        if student["name"].lower() == name.lower():
-            print(f"Student '{name}' already exists!")
-            return
+    name_lower = name.lower()
+    if any(student["name"].lower() == name_lower for student in students):
+        print(f"Student '{name}' already exists!")
+        return
     
     new_student = {
         "name": name,
@@ -30,6 +40,9 @@ def add_grades_for_student(students):
         return
     
     name = input("Enter student name: ").strip()
+    if not name:
+        print("Error: Student name cannot be empty!")
+        return
     
     student_found = None
     for student in students:
@@ -109,21 +122,27 @@ def find_top_performer(students):
         print("No students available.")
         return
     
-    students_with_grades = []
+    top_students = []
+    top_avg = -1
+    
     for student in students:
         avg = calculate_average(student["grades"])
         if avg is not None:
-            students_with_grades.append((student, avg))
+            if avg > top_avg:
+                top_avg = avg
+                top_students = [student]
+            elif avg == top_avg:
+                top_students.append(student)
     
-    if not students_with_grades:
+    if not top_students:
         print("No students with grades available.")
         return
     
-    try:
-        top_student, top_avg = max(students_with_grades, key=lambda x: x[1])
-        print(f"The student with the highest average is {top_student['name']} with a grade of {top_avg:.1f}.")
-    except ValueError:
-        print("Error finding top performer.")
+    if len(top_students) == 1:
+        print(f"The student with the highest average is {top_students[0]['name']} with a grade of {top_avg:.1f}")
+    else:
+        names = ", ".join(student['name'] for student in top_students)
+        print(f"Multiple top students with average {top_avg:.1f}: {names}")
 
 def main():
     """Main program function"""
@@ -134,6 +153,10 @@ def main():
         
         try:
             choice = input("Enter your choice: ").strip()
+            
+            if not choice:
+                print("Error: Please enter a choice!")
+                continue
             
             if choice == '1':
                 add_new_student(students)
@@ -153,6 +176,5 @@ def main():
             print(f"An error occurred: {e}")
             print("Please try again.")
 
-# Run the program
 if __name__ == "__main__":
     main()
