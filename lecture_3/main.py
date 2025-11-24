@@ -1,180 +1,209 @@
-def display_menu():
-    """Display the main menu"""
-    print("\n--- Student Grade Analyzer ---")
-    print("1. Add a new student")
-    print("2. Add grades for a student")
-    print("3. Generate a full report")
-    print("4. Find the top student")
-    print("5. Exit program")
+class StudentGradeAnalyzer:
+    """Student Grade Analyzer Program"""
     
-def enter_student_name():
-    name = input("Enter student name: ").strip()
+    def __init__(self):
+        self.students = []
     
-    if not name:
-        raise("Error: Student name cannot be empty!")    
-    return name
-
-def add_new_student(students):
-    """Add a new student to the list"""
-    name = input("Enter student name: ").strip()
-    if not name:
-        print("Error: Student name cannot be empty!")
-        return
+    def display_menu(self):
+        """Display the main menu"""
+        print("\n--- Student Grade Analyzer ---")
+        print("1. Add a new student")
+        print("2. Add grades for a student")
+        print("3. Generate a full report")
+        print("4. Find the top student")
+        print("5. Exit program")
     
-    name_lower = name.lower()
-    if any(student["name"].lower() == name_lower for student in students):
-        print(f"Student '{name}' already exists!")
-        return
-    
-    new_student = {
-        "name": name,
-        "grades": []
-    }
-    students.append(new_student)
-    print(f"Student '{name}' added successfully!")
-
-def add_grades_for_student(students):
-    """Add grades for an existing student"""
-    if not students:
-        print("No students available. Please add students first.")
-        return
-    
-    name = input("Enter student name: ").strip()
-    if not name:
-        print("Error: Student name cannot be empty!")
-        return
-    
-    student_found = None
-    for student in students:
-        if student["name"].lower() == name.lower():
-            student_found = student
-            break
-    
-    if not student_found:
-        print(f"Student '{name}' not found!")
-        return
-    
-    print(f"Adding grades for {student_found['name']}:")
-    
-    while True:
-        grade_input = input("Enter a grade (or 'done' to finish): ").strip().lower()
-        
-        if grade_input == 'done':
-            break
-        
-        try:
-            grade = float(grade_input)
-            if 0 <= grade <= 100:
-                student_found["grades"].append(grade)
-                print(f"Grade {grade} added successfully!")
-            else:
-                print("Invalid grade! Please enter a number between 0 and 100.")
-        except ValueError:
-            print("Invalid input! Please enter a valid number or 'done'.")
-
-def calculate_average(grades):
-    """Calculate average of grades, handle empty list"""
-    if not grades:
+    def _get_student_by_name(self, name):
+        """Find student by name (case-insensitive)"""
+        name_lower = name.lower()
+        for student in self.students:
+            if student["name"].lower() == name_lower:
+                return student
         return None
-    return sum(grades) / len(grades)
-
-def show_report(students):
-    """Generate and display full report"""
-    if not students:
-        print("No students available.")
-        return
     
-    print("\n--- Student Report ---")
-    
-    averages = []
-    valid_averages = []
-    
-    for student in students:
+    def _validate_grade(self, grade_str):
+        """Validate and convert grade input"""
         try:
-            avg = calculate_average(student["grades"])
+            grade = float(grade_str)
+            if 0 <= grade <= 100:
+                return grade
+            else:
+                print("Error: Grade must be between 0 and 100")
+                return None
+        except ValueError:
+            print("Error: Please enter a valid number")
+            return None
+    
+    def _get_student_name_input(self):
+        """Get and validate student name input"""
+        name = input("Enter student name: ").strip()
+        if not name:
+            print("Error: Student name cannot be empty!")
+            return None
+        return name
+    
+    def add_new_student(self):
+        """Add a new student to the list"""
+        name = self._get_student_name_input()
+        if not name:
+            return
+        
+        if self._get_student_by_name(name):
+            print(f"Error: Student '{name}' already exists!")
+            return
+        
+        new_student = {
+            "name": name,
+            "grades": []
+        }
+        self.students.append(new_student)
+        print(f"Student '{name}' added successfully!")
+    
+    def add_grades_for_student(self):
+        """Add grades for an existing student"""
+        if not self.students:
+            print("No students available. Please add students first.")
+            return
+        
+        name = self._get_student_name_input()
+        if not name:
+            return
+        
+        student = self._get_student_by_name(name)
+        if not student:
+            print(f"Error: Student '{name}' not found!")
+            return
+        
+        print(f"Adding grades for {student['name']}:")
+        
+        while True:
+            grade_input = input("Enter a grade (0-100) or 'done' to finish: ").strip().lower()
+            
+            if grade_input == 'done':
+                break
+            
+            grade = self._validate_grade(grade_input)
+            if grade is not None:
+                student["grades"].append(grade)
+                print(f"Grade {grade} added successfully!")
+    
+    def calculate_average(self, grades):
+        """Calculate average of grades, handle empty list"""
+        if not grades:
+            return None
+        return sum(grades) / len(grades)
+    
+    def _get_student_statistics(self):
+        """Calculate statistics for all students"""
+        averages = []
+        valid_averages = []
+        
+        for student in self.students:
+            avg = self.calculate_average(student["grades"])
+            averages.append(avg)
+            if avg is not None:
+                valid_averages.append(avg)
+        
+        return averages, valid_averages
+    
+    def show_report(self):
+        """Generate and display full report"""
+        if not self.students:
+            print("No students available.")
+            return
+        
+        print("\n--- Student Report ---")
+        
+        averages, valid_averages = self._get_student_statistics()
+        
+        # Display individual student averages
+        for student, avg in zip(self.students, averages):
             if avg is not None:
                 print(f"{student['name']}'s average grade is {avg:.1f}.")
-                averages.append(avg)
-                valid_averages.append(avg)
             else:
                 print(f"{student['name']}'s average grade is N/A.")
-                averages.append(None)
-        except ZeroDivisionError:
-            print(f"{student['name']}'s average grade is N/A.")
-            averages.append(None)
-    
-    if valid_averages:
-        max_avg = max(valid_averages)
-        min_avg = min(valid_averages)
-        overall_avg = sum(valid_averages) / len(valid_averages)
         
-        print("---"*40)
-        print(f"Max Average: {max_avg:.1f}")
-        print(f"Min Average: {min_avg:.1f}")
-        print(f"Overall Average: {overall_avg:.1f}")
-    else:
-        print("---"*40)
-        print("No valid averages to calculate statistics.")
-
-def find_top_performer(students):
-    """Find student with highest average grade"""
-    if not students:
-        print("No students available.")
-        return
+        # Display overall statistics
+        if valid_averages:
+            print("\n--- Overall Statistics ---")
+            print(f"Highest average: {max(valid_averages):.1f}")
+            print(f"Lowest average: {min(valid_averages):.1f}")
+            print(f"Overall average: {sum(valid_averages) / len(valid_averages):.1f}")
+        else:
+            print("\nNo valid averages to calculate statistics.")
     
-    top_students = []
-    top_avg = -1
-    
-    for student in students:
-        avg = calculate_average(student["grades"])
-        if avg is not None:
-            if avg > top_avg:
-                top_avg = avg
-                top_students = [student]
-            elif avg == top_avg:
-                top_students.append(student)
-    
-    if not top_students:
-        print("No students with grades available.")
-        return
-    
-    if len(top_students) == 1:
-        print(f"The student with the highest average is {top_students[0]['name']} with a grade of {top_avg:.1f}")
-    else:
-        names = ", ".join(student['name'] for student in top_students)
-        print(f"Multiple top students with average {top_avg:.1f}: {names}")
-
-def main():
-    """Main program function"""
-    students = [] 
-    
-    while True:
-        display_menu()
+    def find_top_performer(self):
+        """Find student(s) with highest average grade"""
+        if not self.students:
+            print("No students available.")
+            return
         
-        try:
-            choice = input("Enter your choice: ").strip()
+        top_students = []
+        top_avg = -1
+        
+        for student in self.students:
+            avg = self.calculate_average(student["grades"])
+            if avg is not None:
+                if avg > top_avg:
+                    top_avg = avg
+                    top_students = [student]
+                elif avg == top_avg:
+                    top_students.append(student)
+        
+        if not top_students:
+            print("No students with grades available.")
+            return
+        
+        if len(top_students) == 1:
+            student = top_students[0]
+            print(f"Top student: {student['name']} with {top_avg:.1f} average")
+        else:
+            names = ", ".join(student['name'] for student in top_students)
+            print(f"Top students (tie): {names} with {top_avg:.1f} average")
+    
+    def _handle_menu_choice(self, choice):
+        """Handle menu choice selection"""
+        menu_actions = {
+            '1': self.add_new_student,
+            '2': self.add_grades_for_student,
+            '3': self.show_report,
+            '4': self.find_top_performer
+        }
+        
+        action = menu_actions.get(choice)
+        if action:
+            action()
+        else:
+            print("Invalid choice! Please enter a number between 1-5.")
+    
+    def run(self):
+        """Main program loop"""
+        print("Welcome to Student Grade Analyzer!")
+        
+        while True:
+            self.display_menu()
+            choice = input("Enter your choice (1-5): ").strip()
             
             if not choice:
                 print("Error: Please enter a choice!")
                 continue
             
-            if choice == '1':
-                add_new_student(students)
-            elif choice == '2':
-                add_grades_for_student(students)
-            elif choice == '3':
-                show_report(students)
-            elif choice == '4':
-                find_top_performer(students)
-            elif choice == '5':
-                print("Exiting program.")
+            if choice == '5':
+                print("Thank you for using Student Grade Analyzer. Goodbye!")
                 break
-            else:
-                print("Invalid choice! Please enter a number between 1-5.")
-        
-        except Exception as e:
-            print(f"An error occurred: {e}")
-            print("Please try again.")
+            
+            try:
+                self._handle_menu_choice(choice)
+            except Exception as e:
+                print(f"An unexpected error occurred: {e}")
+                print("Please try again.")
+
+
+def main():
+    """Launch the Student Grade Analyzer"""
+    analyzer = StudentGradeAnalyzer()
+    analyzer.run()
+
 
 if __name__ == "__main__":
     main()
